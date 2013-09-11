@@ -5,6 +5,8 @@ JsonStorage
 
 Storage mechanism for the [Commentar][commentar] project. This storage mechanism requires no database, but rather stores the data encoded in the JSON format on the filesystem.
 
+This should only be used for development purposes to have a portable way of introducing some persistent storage. It should *never* be used in production.
+
 Installation
 -
 
