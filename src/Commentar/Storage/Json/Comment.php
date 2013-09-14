@@ -14,6 +14,7 @@
  */
 namespace Commentar\Storage\Json;
 
+use Commentar\Storage\Datamapper\CommentMappable;
 use Commentar\DomainObject\Comment as CommentDomainObject;
 use Commentar\Storage\InvalidStorageException;
 
@@ -25,7 +26,7 @@ use Commentar\Storage\InvalidStorageException;
  * @subpackage Json
  * @author     Pieter Hordijk <info@pieterhordijk.com>
  */
-class Comment
+class Comment implements CommentMappable
 {
     /**
      * @var string The location of the user storage file
@@ -40,6 +41,24 @@ class Comment
     public function __construct($storageLocation)
     {
         $this->storageLocation = rtrim($storageLocation, '/') . '/comments/';
+    }
+
+    /**
+     * Fetches all comments based on the post id
+     *
+     * @param mixed $postId The id of the post of which to fetch the comments
+     *
+     * @return array List of all the comments on the post
+     */
+    public function fetchByPostId($id)
+    {
+        $comments = $this->getAll($id)['comments'];
+
+        foreach ($comments as $id => $comment) {
+            $comments[$id]['timestamp'] = new \DateTime($comment['timestamp']);
+        }
+
+        return $comments;
     }
 
     /**
@@ -106,7 +125,7 @@ class Comment
     /**
      * Gets all the comments data in the storage
      *
-     * @param mixed $id The is of the post
+     * @param mixed $id The id of the post
      *
      * @return array All the comments from the storage
      * @throws \Commentar\Storage\InvalidStorageException When the storage file could not be read
