@@ -14,6 +14,8 @@
  */
 namespace Commentar\Storage\Json;
 
+use Commentar\Storage\Datamapper\Builder;
+
 /**
  * Datamapper factory for the JSON storage mechanism
  *
@@ -22,7 +24,7 @@ namespace Commentar\Storage\Json;
  * @subpackage Json
  * @author     Pieter Hordijk <info@pieterhordijk.com>
  */
-class Factory
+class Factory implements Builder
 {
     /**
      * @var string The base storage location
