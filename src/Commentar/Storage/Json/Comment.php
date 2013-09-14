@@ -44,6 +44,21 @@ class Comment implements CommentMappable
     }
 
     /**
+     * Creates the storage file
+     *
+     * @param mixed $id The id
+     */
+    public function createStore($id)
+    {
+        $comments = [
+            'autoincrement' => 0,
+            'comments' => [],
+        ];
+
+        file_put_contents($this->storageLocation . $id . '.json', json_encode($comments));
+    }
+
+    /**
      * Fetches all comments based on the post id
      *
      * @param mixed $postId The id of the post of which to fetch the comments
