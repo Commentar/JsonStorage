@@ -67,13 +67,30 @@ class Comment implements CommentMappable
      */
     public function fetchByPostId($id)
     {
-        $comments = $this->getAll($id)['comments'];
+        $commentsInfo = $this->getAll($id);
+        $comments     = $commentsInfo->comments;
 
+        $parsedComments = [];
         foreach ($comments as $id => $comment) {
-            $comments[$id]['timestamp'] = new \DateTime($comment['timestamp']);
+            $parsedComments[$id] = [
+                'id'          => $comment->id,
+                'postId'      => $comment->postId,
+                'userId'      => $comment->userId,
+                'parent'      => $comment->parent,
+                'content'     => $comment->content,
+                'timestamp'   => new \DateTime($comment->timestamp),
+                'updated'     => null,
+                'score'       => $comment->score,
+                'isReviewed'  => $comment->isReviewed,
+                'isModerated' => $comment->isModerated,
+            ];
+
+            if ($comment->updated !== null) {
+                $parsedComments[$id]['updated'] = new \DateTime($comment->updated);
+            }
         }
 
-        return $comments;
+        return $parsedComments;
     }
 
     /**
@@ -84,10 +101,41 @@ class Comment implements CommentMappable
     public function persist(CommentDomainObject $comment)
     {
         if ($comment->getId() === null) {
-            $this->update($comment);
-        } else {
             $this->insert($comment);
+        } else {
+            $this->update($comment);
         }
+    }
+
+    /**
+     * Inserts the data of the comment in the storage file
+     *
+     * @param \Commentar\DomainObject\Comment $comment The comment to insert
+     */
+    private function insert(CommentDomainObject $comment)
+    {
+        $comments = $this->getAll($comment->getPostId());
+
+        $comments->autoincrement++;
+
+        if (is_array($comments->comments)) {
+            $comments->comments = new \StdClass();
+        }
+
+        $comments->comments->{$comments->autoincrement} = [
+            'id'          => $comments->autoincrement,
+            'postId'      => $comment->getPostId(),
+            'userId'      => $comment->getUser()->getId(),
+            'parent'      => $comment->getParent(),
+            'content'     => $comment->getContent(),
+            'timestamp'   => $comment->getTimestamp()->format('Y-m-d H:i:s'),
+            'isReviewed'  => $comment->isReviewed(),
+            'isModerated' => $comment->isModerated(),
+            'score'       => $comment->getScore(),
+            'updated'     => $comment->getUpdated(),
+        ];
+
+        $this->storeAll($comment->getPostId(), $comments);
     }
 
     /**
@@ -98,40 +146,18 @@ class Comment implements CommentMappable
     private function update(CommentDomainObject $comment)
     {
         $comments = $this->getAll($comment->getPostId());
-        $comments['comments'][$comment->getId()] = [
+
+        $comments->comments->{$comment->getId()} = [
             'id'          => $comment->getId(),
             'postId'      => $comment->getPostId(),
             'userId'      => $comment->getUser()->getId(),
             'parent'      => $comment->getParent(),
             'content'     => $comment->getContent(),
-            'timestamp'   => $comment->getTimestamp()->fomat('Y-m-d H:i:s'),
+            'timestamp'   => $comment->getTimestamp()->format('Y-m-d H:i:s'),
             'isReviewed'  => $comment->isReviewed(),
             'isModerated' => $comment->isModerated(),
-        ];
-
-        $this->storeAll($comments);
-    }
-
-    /**
-     * Inserts the data of the comment in the storage file
-     *
-     * @param \Commentar\DomainObject\Comment $comment The comment to insert
-     */
-    private function insert(CommentDomainObject $comment)
-    {
-        $comments = $this->getAll();
-
-        $comments['autoincrement']++;
-
-        $comments['users'][$comments['autoincrement']] = [
-            'id'          => $comment->getId(),
-            'postId'      => $comment->getPostId(),
-            'userId'      => $comment->getUser()->getId(),
-            'parent'      => $comment->getParent(),
-            'content'     => $comment->getContent(),
-            'timestamp'   => $comment->getTimestamp()->fomat('Y-m-d H:i:s'),
-            'isReviewed'  => $comment->isReviewed(),
-            'isModerated' => $comment->isModerated(),
+            'score'       => $comment->getScore(),
+            'updated'     => $comment->getUpdated(),
         ];
 
         $this->storeAll($comment->getPostId(), $comments);
@@ -162,9 +188,9 @@ class Comment implements CommentMappable
      * Stores all the user data in the storage
      *
      * @param mixed $id The is of the post
-     * @param array The users to store
+     * @param object The users to store
      */
-    private function storeAll($id, array $comments)
+    private function storeAll($id, $comments)
     {
         $storageLocation = $this->storageLocation . $id . '.json';
 
