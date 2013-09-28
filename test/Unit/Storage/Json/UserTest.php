@@ -134,6 +134,42 @@ class UserTest extends \PHPUnit_Framework_TestCase
      * @covers Commentar\Storage\Json\User::fetchByUsername
      * @covers Commentar\Storage\Json\User::getAll
      */
+    public function testFetchByUsernameDoesNotExistStorageFilled()
+    {
+        $user = new User(__DIR__ . '/../../../Data');
+
+        $data = [
+            'autoincrement' => 1,
+            'users' => [
+                '10' => [
+                    'id'           => 10,
+                    'username'     => 'PeeHaa',
+                    'email'        => 'peehaa@example.com',
+                    'isHellbanned' => false,
+                    'isAdmin'      => true,
+                    'password'     => 'x',
+                ],
+            ],
+        ];
+
+        file_put_contents(__DIR__ . '/../../../Data/users.json', json_encode($data));
+
+        $domainObject = new \Commentar\DomainObject\User();
+        $domainObject->fill([
+            'username' => 'NotPeeHaa',
+        ]);
+
+        $this->assertNull($user->fetchByUsername($domainObject));
+        $this->assertNull($domainObject->getEmail());
+
+        $this->resetUsers();
+    }
+
+    /**
+     * @covers Commentar\Storage\Json\User::__construct
+     * @covers Commentar\Storage\Json\User::fetchByUsername
+     * @covers Commentar\Storage\Json\User::getAll
+     */
     public function testFetchByUsernameExists()
     {
         $user = new User(__DIR__ . '/../../../Data');
