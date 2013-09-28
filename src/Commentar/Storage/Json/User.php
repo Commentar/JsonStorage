@@ -14,6 +14,7 @@
  */
 namespace Commentar\Storage\Json;
 
+use Commentar\Storage\Datamapper\UserMappable;
 use Commentar\DomainObject\User as UserDomainObject;
 use Commentar\Storage\InvalidStorageException;
 
@@ -25,7 +26,7 @@ use Commentar\Storage\InvalidStorageException;
  * @subpackage Json
  * @author     Pieter Hordijk <info@pieterhordijk.com>
  */
-class User
+class User implements UserMappable
 {
     /**
      * @var string The location of the user storage file
@@ -43,6 +44,59 @@ class User
     }
 
     /**
+     * Gets the user based on the id
+     *
+     * @param int $id The id of the user
+     *
+     * @return null|array The user
+     */
+    public function fetchById(UserDomainObject $user, $id)
+    {
+        $users = $this->getAll();
+
+        if (!property_exists($users->users, $id)) {
+            return null;
+        }
+
+        $userData = $users->users->{$id};
+
+        $user->fill([
+            'id'           => $userData->id,
+            'username'     => $userData->username,
+            'email'        => $userData->email,
+            'isHellbanned' => $userData->isHellbanned,
+            'isAdmin'      => $userData->isAdmin,
+        ]);
+    }
+
+    /**
+     * Gets the user based on the username
+     *
+     * @param \Commentar\DomainObject\User $user The user domain object
+     */
+    public function fetchByUsername(UserDomainObject $user)
+    {
+        $users = $this->getAll();
+
+        foreach ($users->users as $id => $userData) {
+            if (strtolower($userData->username) !== strtolower($user->getUsername())) {
+                continue;
+            }
+
+            $user->fill([
+                'id'           => $userData->id,
+                'username'     => $userData->username,
+                'password'     => $userData->password,
+                'email'        => $userData->email,
+                'isHellbanned' => $userData->isHellbanned,
+                'isAdmin'      => $userData->isAdmin,
+            ]);
+
+            return;
+        }
+    }
+
+    /**
      * Persists the data of the user in the storage file
      *
      * @param \Commentar\DomainObject\User $user The user to store
@@ -50,9 +104,9 @@ class User
     public function persist(UserDomainObject $user)
     {
         if ($user->getId() === null) {
-            $this->update($user);
-        } else {
             $this->insert($user);
+        } else {
+            $this->update($user);
         }
     }
 
@@ -64,7 +118,7 @@ class User
     private function update(UserDomainObject $user)
     {
         $users = $this->getAll();
-        $users['users'][$user->getId()] = [
+        $users->users->{$user->getId()} = [
             'id'           => $user->getId(),
             'username'     => $user->getUsername(),
             'email'        => $user->getEmail(),
@@ -84,9 +138,9 @@ class User
     {
         $users = $this->getAll();
 
-        $users['autoincrement']++;
+        $users->autoincrement++;
 
-        $users['users'][$users['autoincrement']] = [
+        $users->users->{$users->autoincrement} = [
             'id'           => $user->getId(),
             'username'     => $user->getUsername(),
             'email'        => $user->getEmail(),
@@ -119,7 +173,7 @@ class User
      *
      * @param array The users to store
      */
-    private function storeAll(array $users)
+    private function storeAll($users)
     {
         file_put_contents($this->storageLocation, json_encode($users));
     }
