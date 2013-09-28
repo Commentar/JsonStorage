@@ -16,8 +16,31 @@ Add the storage mechanism to the project's `composer.json` file:
         "commentar/json-storage": "0.0.*",
     }
 
-Setup the storage in the bootstrap file:
+Add the default admin user in the `/data/users.json` file:
 
-    $storage = new \Commentar\Storage\Json();
+    {
+        "autoincrement": 1,
+        "users": {
+            "1": {
+                "id": 1,
+                "username": "PeeHaa",
+                "password": "$2y$14$Usk4vuNbzowQihbscOZjcu6RRzPBK3zIn79F8wn.bjczbElrqzbJu",
+                "email": "your@mail.com",
+                "isHellbanned": false,
+                "isAdmin": true
+            }
+        }
+    }
+
+The password should be hashed using PHP's native password hashing function (`password_hash()`). The easiest way to generate the password hash is by either using [this service][hash-service] or by manually running the password hashing function: `echo password_hash('Your super secret password', PASSWORD_DEFAULT, ['cost' => 14]);`.
+
+To start using the storage you will have to start using the provided datamapper factory by this library. An example of retrieving the comment tree of a thread is:
+
+    $domainObjectFactory = new \Commentar\DomainObject\Factory();
+    $datamapperFactory   = new \Commentar\Storage\Json\Factory(__DIR__ . '/vendor/commentar/json-storage/data');
+    $commentService      = new \Commentar\Service\Comment($domainObjectFactory, $datamapperFactory);
+
+    $commentTree = $commentService->getTree(1);
 
 [commentar]:https://github.com/Commentar/Commentar
+[hash-service]:https://passhash.pieterhordijk.com
