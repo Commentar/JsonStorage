@@ -72,8 +72,3 @@ spl_autoload_register(function ($class) {
         require $path;
     }
 });
-
-/**
- * Load the project's autoloader
- */
-//require_once __DIR__ . '/../src/Commentar/bootstrap.php';
