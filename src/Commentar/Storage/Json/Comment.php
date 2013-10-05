@@ -59,6 +59,32 @@ class Comment implements CommentMappable
     }
 
     /**
+     * Fetches a comment by its id
+     *
+     * @param \Commentar\DomainObject\Comment $comment The comment to delete
+     *
+     * return array Information of the comment
+     */
+    public function fetchById(CommentDomainObject $comment)
+    {
+        $commentsInfo = $this->getAll($comment->getPostId());
+        $comments     = $commentsInfo->comments;
+
+        return[
+            'id'          => $comments->{$comment->getId()}->id,
+            'postId'      => $comments->{$comment->getId()}->postId,
+            'userId'      => $comments->{$comment->getId()}->userId,
+            'parent'      => $comments->{$comment->getId()}->parent,
+            'content'     => $comments->{$comment->getId()}->content,
+            'timestamp'   => new \DateTime($comments->{$comment->getId()}->timestamp),
+            'updated'     => null,
+            'score'       => $comments->{$comment->getId()}->score,
+            'isReviewed'  => $comments->{$comment->getId()}->isReviewed,
+            'isModerated' => $comments->{$comment->getId()}->isModerated,
+        ];
+    }
+
+    /**
      * Fetches all comments based on the post id
      *
      * @param mixed $postId The id of the post of which to fetch the comments
@@ -91,6 +117,20 @@ class Comment implements CommentMappable
         }
 
         return $parsedComments;
+    }
+
+    /**
+     * Deletes a comment
+     *
+     * @param \Commentar\DomainObject\Comment $comment The comment to delete
+     */
+    public function delete(CommentDomainObject $comment)
+    {
+        $comments = $this->getAll($comment->getPostId());
+
+        unset($comments->comments->{$comment->getId()});
+
+        $this->storeAll($comment->getPostId(), $comments);
     }
 
     /**

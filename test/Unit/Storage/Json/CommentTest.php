@@ -76,6 +76,49 @@ class CommentTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers Commentar\Storage\Json\Comment::__construct
+     * @covers Commentar\Storage\Json\Comment::fetchById
+     * @covers Commentar\Storage\Json\Comment::getAll
+     */
+    public function testFetchByIdCommentExists()
+    {
+        $comment = new Comment(__DIR__ . '/../../../Data');
+
+        $data = [
+            'autoincrement' => 1,
+            'comments' => [
+                '1' => [
+                    'id'          => 1,
+                    'postId'      => 1,
+                    'userId'      => 1,
+                    'parent'      => null,
+                    'content'     => 'My super awesome content',
+                    'timestamp'   => '2013-01-01 00:00:00',
+                    'updated'     => null,
+                    'score'       => 1,
+                    'isReviewed'  => true,
+                    'isModerated' => false,
+                ],
+            ],
+        ];
+
+        file_put_contents(__DIR__ . '/../../../Data/comments/1.json', json_encode($data));
+
+        $domainObject = new \Commentar\DomainObject\Comment();
+        $domainObject->fill([
+            'id'     => 1,
+            'postId' => 1,
+        ]);
+
+        $comment = $comment->fetchById($domainObject);
+
+        $this->assertSame('My super awesome content', $comment['content']);
+
+        unlink(__DIR__ . '/../../../Data/comments/1.json');
+        $this->assertFalse(file_exists(__DIR__ . '/../../../Data/comments/1.json'));
+    }
+
+    /**
+     * @covers Commentar\Storage\Json\Comment::__construct
      * @covers Commentar\Storage\Json\Comment::fetchByPostId
      * @covers Commentar\Storage\Json\Comment::getAll
      */
@@ -181,6 +224,67 @@ class CommentTest extends \PHPUnit_Framework_TestCase
         $comments = $comment->fetchByPostId(1);
 
         $this->assertSame(0, count($comments));
+
+        unlink(__DIR__ . '/../../../Data/comments/1.json');
+        $this->assertFalse(file_exists(__DIR__ . '/../../../Data/comments/1.json'));
+    }
+
+    /**
+     * @covers Commentar\Storage\Json\Comment::__construct
+     * @covers Commentar\Storage\Json\Comment::delete
+     * @covers Commentar\Storage\Json\Comment::getAll
+     * @covers Commentar\Storage\Json\Comment::storeAll
+     */
+    public function testDelete()
+    {
+        $comment = new Comment(__DIR__ . '/../../../Data');
+
+        $data = [
+            'autoincrement' => 2,
+            'comments' => [
+                '1' => [
+                    'id'          => 1,
+                    'postId'      => 1,
+                    'userId'      => 1,
+                    'parent'      => null,
+                    'content'     => 'My super awesome content',
+                    'timestamp'   => '2013-01-01 00:00:00',
+                    'updated'     => '2013-01-01 00:00:00',
+                    'score'       => 1,
+                    'isReviewed'  => true,
+                    'isModerated' => false,
+                ],
+                '2' => [
+                    'id'          => 2,
+                    'postId'      => 1,
+                    'userId'      => 1,
+                    'parent'      => null,
+                    'content'     => 'My next super awesome content',
+                    'timestamp'   => '2013-01-01 00:00:00',
+                    'updated'     => '2013-01-01 00:00:00',
+                    'score'       => 1,
+                    'isReviewed'  => true,
+                    'isModerated' => false,
+                ],
+            ],
+        ];
+
+        file_put_contents(__DIR__ . '/../../../Data/comments/1.json', json_encode($data));
+
+        $comments = $comment->fetchByPostId(1);
+
+        $this->assertSame(2, count($comments));
+
+        $domainObject = new \Commentar\DomainObject\Comment();
+        $domainObject->fill([
+            'id'     => 1,
+            'postId' => 1,
+        ]);
+
+        $comment->delete($domainObject);
+        $comments = $comment->fetchByPostId(1);
+
+        $this->assertSame(1, count($comments));
 
         unlink(__DIR__ . '/../../../Data/comments/1.json');
         $this->assertFalse(file_exists(__DIR__ . '/../../../Data/comments/1.json'));
